@@ -1,0 +1,33 @@
+Script started on 2025-01-27 03:16:28+00:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="91" LINES="15"]
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/Hwork1 [0;36m([1;31mmain[0;36m) [0m$ cd sbcl-1.4.3-x86-linux/
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/Hwork1/sbcl-1.4.3-x86-linux [0;36m([1;31mmain[0;36m) [0m$ sb cl
+This is SBCL 1.4.3, an implementation of ANSI Common Lisp.
+More information about SBCL is available at <http://www.sbcl.org/>.
+
+SBCL is free software, provided as is, with absolutely no warranty.
+It is mostly in the public domain; some portions are provided under
+BSD-style licenses.  See the CREDITS and COPYING files in the
+distribution for more information.
+* (cons 'a (cons 'b (cons 'x (cons 'd NIL))))
+
+(A B X D)
+* (car (cdr (cdr '(a b x d))))
+
+X
+* (cons 'a (cons (cons 'b (cons (cons 'x (cons 'd NIL)) NIL)) NIL))
+
+(A (B (X D)))
+* (car (car (cdr (car (cdr '(a (b (x d))))))))
+
+X
+* (cons (cons (cons 'a (cons (cons 'b (cons (cons 'x NIL) (cons 'd NIL))) NIL)) NIL) NIL)
+
+(((A (B (X) D))))
+* (car (car (cdr (car (cdr (car (car '(((a (b (x) d)))))))))))
+
+X
+* (EXIT)
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/Hwork1/sbcl-1.4.3-x86-linux [0;36m([1;31mmain[0;36m) [0m$ ex it
+exit
+
+Script done on 2025-01-27 03:19:15+00:00 [COMMAND_EXIT_CODE="0"]
