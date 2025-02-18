@@ -1,0 +1,123 @@
+Script started on 2025-02-18 21:07:22+00:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="228" LINES="15"]
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/Hwork3 [0;36m([1;31mmain[0;36m) [0m$ cat non-recursive-quicksort.cpp
+#include <iostream>
+#include <stack>
+#include <vector>
+
+using namespace std;
+
+// Partition function 
+int partition(vector<int>& arr, int low, int high) {
+    int pivot = arr[high];  // Choosing the last element as pivot
+    int i = low - 1;  // Index of the smaller element
+
+    for (int j = low; j < high; j++) {
+        if (arr[j] <= pivot) {
+            i++;
+            swap(arr[i], arr[j]);  // Swap elements
+        }
+    }
+    swap(arr[i + 1], arr[high]);  // Move pivot 
+    return i + 1;  // Return partition index
+}
+
+// Iterative QuickSort 
+void quickSortIterative(vector<int>& arr, int low, int high) {
+    stack<pair<int, int>> stk;  // Stack to store low and high indices
+
+    // Push initial range
+    stk.push({low, high});
+
+    while (!stk.empty()) {
+        auto range = stk.top();  // Get top range
+        stk.pop();
+
+        int l = range.first, h = range.second;
+        if (l < h) {
+            int pivotIndex = partition(arr, l, h);
+
+            // Push left subarray if it has more than one element
+            if (l < pivotIndex - 1)
+                stk.push({l, pivotIndex - 1});
+
+            // Push right subarray if it has more than one element
+            if (pivotIndex + 1 < h)
+                stk.push({pivotIndex + 1, h});
+        }
+    }
+}
+
+
+void printArray(const vector<int>& arr) {
+    for (int num : arr)
+        cout << num << " ";
+    cout << endl;
+}
+
+
+int main() {
+    int n;
+    cout << "Enter the number of elements: ";
+    cin >> n;
+
+    vector<int> arr(n);  // Create vector size n
+    cout << "Enter " << n << " elements: ";
+    for (int i = 0; i < n; i++)
+        cin >> arr[i];  // Take user input
+
+    cout << "Original array: ";
+    printArray(arr);
+
+    quickSortIterative(arr, 0, n - 1);
+
+    cout << "Sorted array: ";
+    printArray(arr);
+
+    return 0;
+}
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/Hwork3 [0;36m([1;31mmain[0;36m) [0m$ g++ non-recursive-quicksort.cpp
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/Hwork3 [0;36m([1;31mmain[0;36m) [0m$ ./a.out
+Enter the number of elements: 8
+Enter 8 elements: 5 2 8 10 12 8 1 7
+Original array: 5 2 8 10 12 8 1 7 
+Sorted array: 1 2 5 7 8 8 10 12 
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/Hwork3 [0;36m([1;31mmain[0;36m) [0m$ ./a.out
+Enter the number of elements: 6
+Enter 6 elements: 10 10 2 5 6 3 4 
+Original array: 10 10 2 5 6 3 
+Sorted array: 2 3 5 6 10 10 
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/Hwork3 [0;36m([1;31mmain[0;36m) [0m$ ./a.out
+Enter the number of elements: 10
+Enter 10 elements: 5 6 2 4 16 3 13 14 12 8  
+Original array: 5 6 2 4 16 3 13 14 12 8 
+Sorted array: 2 3 4 5 6 8 12 13 14 16 
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/Hwork3 [0;36m([1;31mmain[0;36m) [0m$ cd sbcl-1.4.3-x86-linux
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/Hwork3/sbcl-1.4.3-x86-linux [0;36m([1;31mmain[0;36m) [0m$ cat mergesort.lisp
+(defun partition (lst left right)
+  "Splits lst into two."
+  (cond
+    ((null lst) (values (reverse left) (reverse right)))  ; Base case: return reversed halves
+    ((null (cdr lst)) (values (reverse (cons (car lst) left)) (reverse right))) ; One item left, add to left
+    (t (partition (cddr lst) (cons (car lst) left) (cons (cadr lst) right)))))  ; Split into two lists
+
+(defun merge-lists (lst1 lst2)
+  "Merges two sorted lists into one sorted list."
+  (cond
+    ((null lst1) lst2)  ; If lst1 is empty, return lst2
+    ((null lst2) lst1)  ; If lst2 is empty, return lst1
+    ((<= (car lst1) (car lst2)) (cons (car lst1) (merge-lists (cdr lst1) lst2)))  ; Take from lst1
+    (t (cons (car lst2) (merge-lists lst1 (cdr lst2))))))  ; Take from lst2
+
+(defun mergesort (lst)
+  "Sorts lst using the Mergesort algorithm recursively."
+  (if (or (null lst) (null (cdr lst)))  ; Base case: empty or single element list
+      lst
+      (multiple-value-bind (left right) (partition lst '() '())  ; Partition into two halves
+        (merge-lists (mergesort left) (mergesort right)))))  ; Recursively sort and merge
+
+
+;; Run the sorting function and print the result
+(format t "Sorted list: ~a~%" (mergesort '(3 1 4 1 5 9 2 6 5 3 5)))[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/Hwork3/sbcl-1.4.3-x86-linux [0;36m([1;31mmain[0;36m) [0m$ exit
+exit
+
+Script done on 2025-02-18 21:10:48+00:00 [COMMAND_EXIT_CODE="0"]
