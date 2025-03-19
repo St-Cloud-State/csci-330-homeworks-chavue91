@@ -1,0 +1,456 @@
+Script started on 2025-03-19 02:23:16+00:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="228" LINES="12"]
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/Hwork5 [0;36m([1;31mmain[0;36m) [0m$ cd ..
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91 [0;36m([1;31mmain[0;36m) [0m$ cd sbcl-1.4.3-x86-linux
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/sbcl-1.4.3-x86-linux [0;36m([1;31mmain[0;36m) [0m$ cat descentParser.lisp
+;; Recursive Descent Parser
+
+;; Define a global variable to store tokenized input
+(defvar *tokens* '())  
+
+;; Function to parse G -> x | y | z | w
+(defun Gfn (str)
+  (print '(in Gfn)) (print str)  ;; Print debug information
+  (if (and str (member (car str) '(x y z w)))  
+      (cdr str)  ;; Consume a valid G terminal and return the remaining tokens
+      (append str (list 'err))))  ;; Return error if G is not valid
+
+;; Function to parse E' -> oG E' | ε (empty production)
+(defun E1fn (str)
+  (print '(in E1fn)) (print str)
+  (if (and str (eql (car str) 'o))  ;; If the next token is 'o', apply rule E' -> oG E'
+      (let ((x (Gfn (cdr str))))  ;; Parse G and get remaining tokens
+        (if (or (null x) (equal x '()))  ;; If parsing G fails, return error
+            (append str (list 'err))
+            (E1fn x)))  ;; Recursively parse E'
+      str))  ;; Return remaining tokens when E' -> ε
+
+;; Function to parse E -> G E'
+(defun Efn (str)
+  (print '(in Efn)) (print str)
+  (let ((x (Gfn str)))  ;; Parse G first
+    (if (or (null x) (equal x '()))  ;; If G parsing fails, return error
+        (append str (list 'err))
+        (E1fn x))))  ;; Continue parsing with E'
+
+;; Function to parse L' -> s L' | ε (empty production)
+(defun L1fn (str)
+  (print '(in L1fn)) (print str)
+  (if (and str (eql (car str) 's))  ;; If next token is 's', apply L' -> s L'
+      (L1fn (cdr str))  ;; Recursively parse L'
+      str))  ;; Return remaining tokens when L' -> ε
+
+;; Function to parse L -> s L'
+(defun Lfn (str)
+  (print '(in Lfn)) (print str)
+  (if (and str (eql (car str) 's))  ;; If the next token is 's', parse L'
+      (let ((x (L1fn (cdr str))))  ;; Parse L'
+        (if (or (null x) (equal x '()))
+            nil  ;; If L' parsing is successful, return nil (fully consumed)
+            x))  ;; Return remaining tokens
+      (append str (list 'err))))  ;; Return error if L -> s L' is not matched
+
+;; Function to parse S -> s | d L b
+(defun Sfn (str)
+  (print '(in Sfn)) (print str)
+  (cond
+    ((and str (eql (car str) 's)) (cdr str))  ;; If 's', return remaining tokens (fully consumed)
+    ((and str (eql (car str) 'd))  ;; If 'd', expect L b
+     (let ((x (Lfn (cdr str))))  ;; Parse L
+       (if (and x (not (null x)) (eql (car x) 'b))  ;; If L is followed by 'b', consume 'b'
+           (cdr x)  ;; Return remaining tokens
+           (append str (list 'err)))))  ;; Return error if L b is not matched
+    (t (append str (list 'err)))))  ;; Return error for invalid S
+
+;; Function to parse I -> i E S | i E S e S
+(defun Ifn (str)
+  (print '(in Ifn)) (print str)
+  (cond
+    ((and str (eql (car str) 'i))  ;; If 'i' is the first token, proceed with E S
+     (let ((x (Efn (cdr str))))  ;; Parse E
+       (cond
+         ((null x) nil)  ;; If Efn fully consumed, return nil
+         ((member (car x) '(s d))  ;; If next token is S (either 's' or 'd'), parse S
+          (let ((y (Sfn x)))
+            (cond
+              ((null y) nil)  ;; If S is fully consumed, return nil
+              ((and y (eql (car y) 'e))  ;;  If 'e' follws S, expect another E S
+               (let ((z (Efn (cdr y))))  ;; Parse second E
+                 (cond
+                   ((null z) nil)  ;; If E is fully consumed, return nil
+                   ((member (car z) '(s d)) (Sfn z))  ;; Parse the second S
+                   (t (append (cdr y) (list 'err))))))  ;; Return error if second S is invalid
+              (t y))))  ;; Return remaining tokens
+         (t (append (cdr str) (list 'err))))))  ;; Return error if second S is invalid
+    (t (append (cdr str) (list 'err)))))  ;; Return error if I does not start with 'i'
+
+;; Entry point: Parses the given input list
+(defun parse (input)
+  (setq *tokens* input)  ;; Store input in the global token list
+  (let ((result (Ifn *tokens*)))  ;; Start parsing from the I non-terminal
+    (if (or (null result) (equal result '()))
+        (format t "Parsing successful!~%")  ;; Print success if parsing is complete
+        (format t "Parsing error: Remaining tokens: ~A~%" result))))  ;; Print error if parsing failed
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/sbcl-1.4.3-x86-linux [0;36m([1;31mmain[0;36m) [0m$ sbcl
+This is SBCL 1.4.3, an implementation of ANSI Common Lisp.
+More information about SBCL is available at <http://www.sbcl.org/>.
+
+SBCL is free software, provided as is, with absolutely no warranty.
+It is mostly in the public domain; some portions are provided under
+BSD-style licenses.  See the CREDITS and COPYING files in the
+distribution for more information.
+* (load "descent  Parser.lisp")
+
+T
+* (parse '(i z o y d s s b))
+
+(IN IFN) 
+(I Z O Y D S S B) 
+(IN EFN) 
+(Z O Y D S S B) 
+(IN GFN) 
+(Z O Y D S S B) 
+(IN E1FN) 
+(O Y D S S B) 
+(IN GFN) 
+(Y D S S B) 
+(IN E1FN) 
+(D S S B) 
+(IN SFN) 
+(D S S B) 
+(IN LFN) 
+(S S B) 
+(IN L1FN) 
+(S B) 
+(IN L1FN) 
+(B) Parsing successful!
+NIL
+* (parse '(izdssssb0 ))
+
+(IN IFN) 
+(IZDSSSSB) Parsing error: Remaining tokens: (ERR)
+NIL
+* (parse '( i z      i z d s s s s b))
+
+(IN IFN) 
+(I Z D S S S S B) 
+(IN EFN) 
+(Z D S S S S B) 
+(IN GFN) 
+(Z D S S S S B) 
+(IN E1FN) 
+(D S S S S B) 
+(IN SFN) 
+(D S S S S B) 
+(IN LFN) 
+(S S S S B) 
+(IN L1FN) 
+(S S S B) 
+(IN L1FN) 
+(S S B) 
+(IN L1FN) 
+(S B) 
+(IN L1FN) 
+(B) Parsing successful!
+NIL
+* (parse '( i w o y o x o y s))^[[D                         (i w   o y o x o y s))
+
+(IN IFN) 
+(I W O Y O X O Y S) 
+(IN EFN) 
+(W O Y O X O Y S) 
+(IN GFN) 
+(W O Y O X O Y S) 
+(IN E1FN) 
+(O Y O X O Y S) 
+(IN GFN) 
+(Y O X O Y S) 
+(IN E1FN) 
+(O X O Y S) 
+(IN GFN) 
+(X O Y S) 
+(IN E1FN) 
+(O Y S) 
+(IN GFN) 
+(Y S) 
+(IN E1FN) 
+(S) 
+(IN SFN) 
+(S) Parsing successful!
+NIL
+* (parse '(i w o w o x o w o x s))
+
+(IN IFN) 
+(I W O W O X O W O X S) 
+(IN EFN) 
+(W O W O X O W O X S) 
+(IN GFN) 
+(W O W O X O W O X S) 
+(IN E1FN) 
+(O W O X O W O X S) 
+(IN GFN) 
+(W O X O W O X S) 
+(IN E1FN) 
+(O X O W O X S) 
+(IN GFN) 
+(X O W O X S) 
+(IN E1FN) 
+(O W O X S) 
+(IN GFN) 
+(W O X S) 
+(IN E1FN) 
+(O X S) 
+(IN GFN) 
+(X S) 
+(IN E1FN) 
+(S) 
+(IN SFN) 
+(S) Parsing successful!
+NIL
+* (parse '(i z d s b))
+
+(IN IFN) 
+(I Z D S B) 
+(IN EFN) 
+(Z D S B) 
+(IN GFN) 
+(Z D S B) 
+(IN E1FN) 
+(D S B) 
+(IN SFN) 
+(D S B) 
+(IN LFN) 
+(S B) 
+(IN L1FN) 
+(B) Parsing successful!
+NIL
+* (parse '(i x s z d s b))
+
+(IN IFN) 
+(I X S Z D S B) 
+(IN EFN) 
+(X S Z D S B) 
+(IN GFN) 
+(X S Z D S B) 
+(IN E1FN) 
+(S Z D S B) 
+(IN SFN) 
+(S Z D S B) Parsing error: Remaining tokens: (Z D S B)
+NIL
+* (pras   arese   se '(iz o    z o y d s s b p))
+
+(IN IFN) 
+(I Z O Y D S S B P) 
+(IN EFN) 
+(Z O Y D S S B P) 
+(IN GFN) 
+(Z O Y D S S B P) 
+(IN E1FN) 
+(O Y D S S B P) 
+(IN GFN) 
+(Y D S S B P) 
+(IN E1FN) 
+(D S S B P) 
+(IN SFN) 
+(D S S B P) 
+(IN LFN) 
+(S S B P) 
+(IN L1FN) 
+(S B P) 
+(IN L1FN) 
+(B P) Parsing error: Remaining tokens: (P)
+NIL
+* (parse '(i   i z d s s s s  ))
+
+(IN IFN) 
+(I Z D S S S S) 
+(IN EFN) 
+(Z D S S S S) 
+(IN GFN) 
+(Z D S S S S) 
+(IN E1FN) 
+(D S S S S) 
+(IN SFN) 
+(D S S S S) 
+(IN LFN) 
+(S S S S) 
+(IN L1FN) 
+(S S S) 
+(IN L1FN) 
+(S S) 
+(IN L1FN) 
+(S) 
+(IN L1FN) 
+NIL Parsing error: Remaining tokens: (D S S S S ERR)
+NIL
+* (parse '(i o y o x o y s))
+
+(IN IFN) 
+(I O Y O X O Y S) 
+(IN EFN) 
+(O Y O X O Y S) 
+(IN GFN) 
+(O Y O X O Y S) 
+(IN E1FN) 
+(O Y O X O Y S ERR) 
+(IN GFN) 
+(Y O X O Y S ERR) 
+(IN E1FN) 
+(O X O Y S ERR) 
+(IN GFN) 
+(X O Y S ERR) 
+(IN E1FN) 
+(O Y S ERR) 
+(IN GFN) 
+(Y S ERR) 
+(IN E1FN) 
+(S ERR) 
+(IN SFN) 
+(S ERR) Parsing error: Remaining tokens: (ERR)
+NIL
+* (parse (i w o w x o w o x s))                        '(i wo    o w x o w o x s))
+
+(IN IFN) 
+(I W O W X O W O X S) 
+(IN EFN) 
+(W O W X O W O X S) 
+(IN GFN) 
+(W O W X O W O X S) 
+(IN E1FN) 
+(O W X O W O X S) 
+(IN GFN) 
+(W X O W O X S) 
+(IN E1FN) 
+(X O W O X S) Parsing error: Remaining tokens: (W O W X O W O X S ERR)
+NIL
+* (parse '(i z q d s b))
+
+(IN IFN) 
+(I Z Q D S B) 
+(IN EFN) 
+(Z Q D S B) 
+(IN GFN) 
+(Z Q D S B) 
+(IN E1FN) 
+(Q D S B) Parsing error: Remaining tokens: (Z Q D S B ERR)
+NIL
+* (parse '(i x o w s b))
+
+(IN IFN) 
+(I X O W S B) 
+(IN EFN) 
+(X O W S B) 
+(IN GFN) 
+(X O W S B) 
+(IN E1FN) 
+(O W S B) 
+(IN GFN) 
+(W S B) 
+(IN E1FN) 
+(S B) 
+(IN SFN) 
+(S B) Parsing error: Remaining tokens: (B)
+NIL
+* (  parse '(i x o w d s b))
+
+(IN IFN) 
+(I X O W D S B) 
+(IN EFN) 
+(X O W D S B) 
+(IN GFN) 
+(X O W D S B) 
+(IN E1FN) 
+(O W D S B) 
+(IN GFN) 
+(W D S B) 
+(IN E1FN) 
+(D S B) 
+(IN SFN) 
+(D S B) 
+(IN LFN) 
+(S B) 
+(IN L1FN) 
+(B) Parsing successful!
+NIL
+* (parse '(i x s z d s b))
+
+(IN IFN) 
+(I X S Z D S B) 
+(IN EFN) 
+(X S Z D S B) 
+(IN GFN) 
+(X S Z D S B) 
+(IN E1FN) 
+(S Z D S B) 
+(IN SFN) 
+(S Z D S B) Parsing error: Remaining tokens: (Z D S B)
+NIL
+* (parse '(i x s d s   o d s b))
+
+(IN IFN) 
+(I X S O D S B) 
+(IN EFN) 
+(X S O D S B) 
+(IN GFN) 
+(X S O D S B) 
+(IN E1FN) 
+(S O D S B) 
+(IN SFN) 
+(S O D S B) Parsing error: Remaining tokens: (O D S B)
+NIL
+* (i x s o d   d s b))
+; in: I X
+;     (I X S D S B)
+; 
+; caught WARNING:
+;   undefined variable: B
+; 
+; caught WARNING:
+;   undefined variable: D
+; 
+; caught STYLE-WARNING:
+;   undefined function: I
+; 
+; caught WARNING:
+;   undefined variable: S
+; 
+; caught WARNING:
+;   undefined variable: X
+; 
+; compilation unit finished
+;   Undefined function:
+;     I
+;   Undefined variables:
+;     B D S X
+;   caught 4 WARNING conditions
+;   caught 1 STYLE-WARNING condition
+
+debugger invoked on a UNBOUND-VARIABLE in thread
+#<THREAD "main thread" RUNNING {9461061}>:
+  The variable X is unbound.
+
+Type HELP for debugger help, or (SB-EXT:EXIT) to exit from SBCL.
+
+restarts (invokable by number or by possibly-abbreviated name):
+  0: [ABORT] Exit debugger, returning to top level.
+
+((LAMBDA ()))
+   source: (I X S D S B)
+0] (parse '(i x s d s b))
+
+(IN IFN) 
+(I X S D S B) 
+(IN EFN) 
+(X S D S B) 
+(IN GFN) 
+(X S D S B) 
+(IN E1FN) 
+(S D S B) 
+(IN SFN) 
+(S D S B) Parsing error: Remaining tokens: (D S B)
+
+NIL
+0] (SB-EXT" :EXIT)
+[0;32m@chavue91 [0m➜ [1;34m/workspaces/csci-330-homeworks-chavue91/sbcl-1.4.3-x86-linux [0;36m([1;31mmain[0;36m) [0m$ exit 
+exit
+
+Script done on 2025-03-19 02:31:20+00:00 [COMMAND_EXIT_CODE="0"]
